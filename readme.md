@@ -12,7 +12,7 @@ Este projeto consiste no desenvolvimento de um gerenciador de tarefas com foco e
 1. **Clonar o repositório:**
 
 ```bash
-   git clone https://github.com/leormsvieira/Projeto_Individual_Web_Application.git
+   git clone https://github.com/leormsvieira/Projeto_Individual_Programacao
    cd seu-projeto
 ```
 
