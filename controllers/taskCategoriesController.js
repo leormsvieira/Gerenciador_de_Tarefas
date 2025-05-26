@@ -1,4 +1,4 @@
-const taskCategoriesService =  require("../services/taskCategoriesService.js");
+const taskCategoriesService = require("../services/taskCategoriesService.js");
 
 const getAllTaskCategories = async (req, res) => {
   try {
@@ -26,7 +26,10 @@ const getTaskCategoryById = async (req, res) => {
 const createTaskCategory = async (req, res) => {
   const { task_id, category_id } = req.body;
   try {
-    const newTaskCategory = await taskCategoriesService.createTaskCategory(task_id, category_id);
+    const newTaskCategory = await taskCategoriesService.createTaskCategory(
+      task_id,
+      category_id
+    );
     res.status(201).json(newTaskCategory);
   } catch (error) {
     res.status(500).json({ message: "Error creating task category", error });
@@ -36,7 +39,10 @@ const createTaskCategory = async (req, res) => {
 const updateTaskCategory = async (req, res) => {
   const { task_id, category_id } = req.body;
   try {
-    const updatedTaskCategory = await taskCategoriesService.updateTaskCategory({ task_id, category_id });
+    const updatedTaskCategory = await taskCategoriesService.updateTaskCategory({
+      task_id,
+      category_id,
+    });
     if (!updatedTaskCategory) {
       return res.status(404).json({ message: "Task category not found" });
     }
@@ -49,7 +55,10 @@ const updateTaskCategory = async (req, res) => {
 const deleteTaskCategory = async (req, res) => {
   const { task_id, category_id } = req.body;
   try {
-    const deletedTaskCategory = await taskCategoriesService.deleteTaskCategory({ task_id, category_id });
+    const deletedTaskCategory = await taskCategoriesService.deleteTaskCategory({
+      task_id,
+      category_id,
+    });
     if (!deletedTaskCategory) {
       return res.status(404).json({ message: "Task Category not found" });
     }
