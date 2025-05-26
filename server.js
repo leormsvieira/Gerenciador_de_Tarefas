@@ -1,33 +1,42 @@
-require('dotenv').config();
-const express = require('express');
+require("dotenv").config();
+const express = require("express");
 const app = express();
-const db = require('./config/db');
-const path = require('path');
+const db = require("./config/database");
+const path = require("path");
 
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "views"));
 
-db.connect()
+db.authenticate()
   .then(() => {
-    console.log('Conectado ao banco de dados PostgreSQL');
+    console.log("Conectado ao banco de dados PostgreSQL");
 
     app.use(express.json());
 
-    const userRoutes = require('./routes/userRoutes');
-    app.use('/users', userRoutes);
+    const usersRoute = require("./routes/usersRoute");
+    app.use("/api/users", usersRoute);
 
-    const frontendRoutes = require('./routes/frontRoutes');
-    app.use('/', frontendRoutes);
+    const tasksRoute = require("./routes/tasksRoute");
+    app.use("/api/tasks", tasksRoute);
+
+    const categoriesRoute = require("./routes/categoriesRoute");
+    app.use("/api/categories", categoriesRoute);
+
+    const taskCategoriesRoute = require("./routes/taskCategoriesRoute");
+    app.use("/api/task-categories", taskCategoriesRoute);
+
+    // const frontendRoutes = require("./routes/frontRoutes");
+    // app.use("/", frontendRoutes);
 
     // Middleware para lidar com erros de rota não encontrada
     app.use((req, res, next) => {
-      res.status(404).send('Página não encontrada');
+      res.status(404).send("Página não encontrada");
     });
 
     // Middleware para lidar com erros internos do servidor
     app.use((err, req, res, next) => {
       console.error(err.stack);
-      res.status(500).send('Erro no servidor');
+      res.status(500).send("Erro no servidor");
     });
 
     const PORT = process.env.PORT || 3000;
@@ -36,6 +45,6 @@ db.connect()
       console.log(`http://localhost:${PORT}`);
     });
   })
-  .catch(err => {
-    console.error('Erro ao conectar ao banco de dados:', err);
+  .catch((err) => {
+    console.error("Erro ao conectar ao banco de dados:", err);
   });
