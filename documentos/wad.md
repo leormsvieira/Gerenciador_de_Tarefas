@@ -20,21 +20,9 @@ Em um mundo cada vez mais dinâmico e repleto de demandas, a capacidade de se or
 
 ---
 
-## <a name="c2"></a>2. Visão Geral da Aplicação Web
+## <a name="c3"></a>2. Projeto da Aplicação Web
 
-### 2.1. Personas (Semana 01 - opcional)
-
-_Posicione aqui sua(s) Persona(s) em forma de texto markdown com imagens, ou como imagem de template preenchido. Atualize esta seção ao longo do módulo se necessário._
-
-### 2.2. User Stories (Semana 01 - opcional)
-
-_Posicione aqui a lista de User Stories levantadas para o projeto. Siga o template de User Stories e utilize a referência USXX para numeração (US01, US02, US03, ...). Indique todas as User Stories mapeadas, mesmo aquelas que não forem implementadas ao longo do projeto. Não se esqueça de explicar o INVEST de 1 User Storie prioritária._
-
----
-
-## <a name="c3"></a>3. Projeto da Aplicação Web
-
-### 3.1. Modelagem do banco de dados
+### 2.1. Modelagem do banco de dados
 
 A modelagem de dados é uma etapa fundamental no desenvolvimento de sistemas, pois define como as informações serão organizadas, armazenadas e relacionadas dentro do banco de dados. Nesse sentido, uma estrutura bem planejada garante integridade, eficiência e escalabilidade ao projeto.
 
@@ -87,7 +75,7 @@ CREATE TABLE IF NOT EXISTS task_categories (
 );
 ```
 
-### 3.1.1 BD e Models (Semana 5)
+### 2.1.1 BD e Models 
 
 **Usuário (User):**
 
@@ -117,7 +105,7 @@ CREATE TABLE IF NOT EXISTS task_categories (
 - task_id (UUID, FK para Task)
 - category_id (UUID, FK para Category)
 
-### 3.2. Arquitetura (Semana 5)
+### 2.2. Arquitetura 
 
 A arquitetura segue o padrão MVC (Model-View-Controller):
 
@@ -137,19 +125,7 @@ Fluxo:
 Usuário <-> View (EJS) <-> Controller <-> Model <-> Banco de Dados
 ```
 
-### 3.3. Wireframes (Semana 03 - opcional)
-
-_Posicione aqui as imagens do wireframe construído para sua solução e, opcionalmente, o link para acesso (mantenha o link sempre público para visualização)._
-
-### 3.4. Guia de estilos (Semana 05 - opcional)
-
-_Descreva aqui orientações gerais para o leitor sobre como utilizar os componentes do guia de estilos de sua solução._
-
-### 3.5. Protótipo de alta fidelidade (Semana 05 - opcional)
-
-_Posicione aqui algumas imagens demonstrativas de seu protótipo de alta fidelidade e o link para acesso ao protótipo completo (mantenha o link sempre público para visualização)._
-
-### 3.6. WebAPI e endpoints (Semana 05)
+### 2.3. WebAPI e endpoints 
 
 **Usuários**
 

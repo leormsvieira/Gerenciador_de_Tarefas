@@ -15,7 +15,7 @@ taskCategoriesRouter.get("/:id", (req, res) => {
 
 // Rota que cria um novo usuário
 taskCategoriesRouter.post("/", (req, res) => {
-  taskCatgoriesController.createTaskCategory(req, res);
+  taskCategoriesController.createTaskCategory(req, res);
 });
 
 // Rota que atualiza um usuário específico pelo ID

@@ -1,0 +1,209 @@
+<%- include('../layout/main', { 
+  title: 'Usuários',
+  body: `
+    <div class="card">
+      <h2>👥 Gerenciar Usuários</h2>
+      
+      <!-- Formulário para criar/editar usuário -->
+      <div style="margin-bottom: 2rem;">
+        <h3>Novo Usuário</h3>
+        <form id="userForm" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
+          <div class="form-group">
+            <label for="userName">Nome *</label>
+            <input type="text" id="userName" class="form-control" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="userEmail">Email *</label>
+            <input type="email" id="userEmail" class="form-control" required>
+          </div>
+          
+          <div class="form-group" style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-success">Salvar</button>
+            <button type="button" id="cancelEditUser" class="btn" style="display: none;">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📋 Lista de Usuários</h2>
+      
+      <table id="usersTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Data de Criação</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="5" class="loading">Carregando usuários...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      let editingUserId = null;
+      let allUsers = [];
+
+      // Função para carregar usuários
+      async function loadUsers() {
+        try {
+          const response = await fetch('/api/users');
+          if (!response.ok) {
+            throw new Error('Erro ao buscar usuários');
+          }
+          allUsers = await response.json();
+          renderUsers();
+        } catch (error) {
+          console.error('Erro ao carregar usuários:', error);
+          const tableBody = document.querySelector('#usersTable tbody');
+          tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #dc3545;">Erro ao carregar usuários.</td></tr>';
+        }
+      }
+
+      // Função para renderizar usuários na tabela
+      function renderUsers() {
+        const tableBody = document.querySelector('#usersTable tbody');
+        tableBody.innerHTML = '';
+
+        if (allUsers.length > 0) {
+          allUsers.forEach(user => {
+            const row = document.createElement('tr');
+            
+            // Formatar data de criação
+            const createdAt = user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : 'N/A';
+
+            row.innerHTML = \`
+              <td>\${user.id}</td>
+              <td>\${user.name || 'Sem nome'}</td>
+              <td>\${user.email || 'Sem email'}</td>
+              <td>\${createdAt}</td>
+              <td>
+                <button onclick="editUser('\${user.id}')" class="btn btn-warning" style="padding: 0.25rem 0.5rem; font-size: 0.875rem; margin-right: 0.25rem;">Editar</button>
+                <button onclick="deleteUser('\${user.id}')" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">Excluir</button>
+              </td>
+            \`;
+            tableBody.appendChild(row);
+          });
+        } else {
+          tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #6c757d;">Nenhum usuário encontrado.</td></tr>';
+        }
+      }
+
+      // Função para salvar usuário (criar ou editar)
+      async function saveUser(event) {
+        event.preventDefault();
+        
+        const name = document.getElementById('userName').value.trim();
+        const email = document.getElementById('userEmail').value.trim();
+
+        if (!name || !email) {
+          alert('Nome e email são obrigatórios!');
+          return;
+        }
+
+        const userData = {
+          name: name,
+          email: email
+        };
+
+        try {
+          let response;
+          if (editingUserId) {
+            // Editar usuário existente
+            response = await fetch(\`/api/users/\${editingUserId}\`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(userData)
+            });
+          } else {
+            // Criar novo usuário
+            response = await fetch('/api/users', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(userData)
+            });
+          }
+
+          if (response.ok) {
+            // Limpar formulário
+            document.getElementById('userForm').reset();
+            cancelEditUser();
+            
+            // Recarregar usuários
+            await loadUsers();
+            
+            alert(editingUserId ? 'Usuário atualizado com sucesso!' : 'Usuário criado com sucesso!');
+          } else {
+            const errorData = await response.json();
+            alert('Erro ao salvar usuário: ' + (errorData.message || 'Erro desconhecido'));
+          }
+        } catch (error) {
+          console.error('Erro ao salvar usuário:', error);
+          alert('Erro ao salvar usuário. Tente novamente.');
+        }
+      }
+
+      // Função para editar usuário
+      function editUser(userId) {
+        const user = allUsers.find(u => u.id === userId);
+        if (user) {
+          editingUserId = userId;
+          document.getElementById('userName').value = user.name || '';
+          document.getElementById('userEmail').value = user.email || '';
+          document.getElementById('cancelEditUser').style.display = 'inline-block';
+          document.querySelector('#userForm button[type="submit"]').textContent = 'Atualizar';
+        }
+      }
+
+      // Função para cancelar edição
+      function cancelEditUser() {
+        editingUserId = null;
+        document.getElementById('userForm').reset();
+        document.getElementById('cancelEditUser').style.display = 'none';
+        document.querySelector('#userForm button[type="submit"]').textContent = 'Salvar';
+      }
+
+      // Função para excluir usuário
+      async function deleteUser(userId) {
+        if (confirm('Tem certeza que deseja excluir este usuário?')) {
+          try {
+            const response = await fetch(\`/api/users/\${userId}\`, {
+              method: 'DELETE'
+            });
+
+            if (response.ok) {
+              await loadUsers();
+              alert('Usuário excluído com sucesso!');
+            } else {
+              const errorData = await response.json();
+              alert('Erro ao excluir usuário: ' + (errorData.message || 'Erro desconhecido'));
+            }
+          } catch (error) {
+            console.error('Erro ao excluir usuário:', error);
+            alert('Erro ao excluir usuário. Tente novamente.');
+          }
+        }
+      }
+
+      // Event listeners
+      document.getElementById('userForm').addEventListener('submit', saveUser);
+      document.getElementById('cancelEditUser').addEventListener('click', cancelEditUser);
+
+      // Carregar dados ao inicializar a página
+      document.addEventListener('DOMContentLoaded', function() {
+        loadUsers();
+      });
+    </script>
+  `
+}) %>

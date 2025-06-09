@@ -1,0 +1,230 @@
+<%- include('../layout/main', { 
+  title: 'Minhas Tarefas',
+  body: `
+    <div class="card">
+      <h2>📝 Gerenciar Tarefas</h2>
+      
+      <!-- Formulário para criar/editar tarefa -->
+      <div style="margin-bottom: 2rem;">
+        <h3>Nova Tarefa</h3>
+        <form id="taskForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+          <div class="form-group">
+            <label for="taskTitle">Título *</label>
+            <input type="text" id="taskTitle" class="form-control" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="taskDescription">Descrição</label>
+            <input type="text" id="taskDescription" class="form-control">
+          </div>
+          
+          <div class="form-group">
+            <label for="taskStatus">Status</label>
+            <select id="taskStatus" class="form-control">
+              <option value="pending">Pendente</option>
+              <option value="in_progress">Em Andamento</option>
+              <option value="completed">Concluída</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="taskDueDate">Prazo</label>
+            <input type="date" id="taskDueDate" class="form-control">
+          </div>
+          
+          <div class="form-group">
+            <label for="taskCategory">Categoria</label>
+            <select id="taskCategory" class="form-control">
+              <option value="">Selecione uma categoria</option>
+            </select>
+          </div>
+          
+          <div class="form-group" style="display: flex; align-items: end; gap: 0.5rem;">
+            <button type="submit" class="btn btn-success">Salvar Tarefa</button>
+            <button type="button" id="cancelEdit" class="btn" style="display: none;">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📋 Lista de Tarefas</h2>
+      
+      <!-- Filtros -->
+      <div style="margin-bottom: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+        <select id="filterStatus" class="form-control" style="width: auto;">
+          <option value="">Todos os Status</option>
+          <option value="pending">Pendente</option>
+          <option value="in_progress">Em Andamento</option>
+          <option value="completed">Concluída</option>
+        </select>
+        
+        <select id="filterCategory" class="form-control" style="width: auto;">
+          <option value="">Todas as Categorias</option>
+        </select>
+        
+        <button id="clearFilters" class="btn">Limpar Filtros</button>
+      </div>
+      
+      <table id="tasksTable">
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Descrição</th>
+            <th>Status</th>
+            <th>Categoria</th>
+            <th>Prazo</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="6" class="loading">Carregando tarefas...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      let editingTaskId = null;
+      let allTasks = [];
+      let allCategories = [];
+
+      // Função para carregar categorias
+      async function loadCategories() {
+        try {
+          const response = await fetch('/api/categories');
+          if (response.ok) {
+            allCategories = await response.json();
+            
+            const categorySelect = document.getElementById('taskCategory');
+            const filterCategorySelect = document.getElementById('filterCategory');
+            
+            // Limpar opções existentes (exceto a primeira)
+            categorySelect.innerHTML = '<option value="">Selecione uma categoria</option>';
+            filterCategorySelect.innerHTML = '<option value="">Todas as Categorias</option>';
+            
+            allCategories.forEach(category => {
+              const option1 = new Option(category.name, category.id);
+              const option2 = new Option(category.name, category.id);
+              categorySelect.appendChild(option1);
+              filterCategorySelect.appendChild(option2);
+            });
+          }
+        } catch (error) {
+          console.error('Erro ao carregar categorias:', error);
+        }
+      }
+
+      // Função para carregar tarefas
+      async function loadTasks() {
+        try {
+          const response = await fetch('/api/tasks');
+          if (!response.ok) {
+            throw new Error('Erro ao buscar tarefas');
+          }
+          allTasks = await response.json();
+          renderTasks(allTasks);
+        } catch (error) {
+          console.error('Erro ao carregar tarefas:', error);
+          const tableBody = document.querySelector('#tasksTable tbody');
+          tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #dc3545;">Erro ao carregar tarefas.</td></tr>';
+        }
+      }
+
+      // Função para renderizar tarefas na tabela
+      function renderTasks(tasks) {
+        const tableBody = document.querySelector('#tasksTable tbody');
+        tableBody.innerHTML = '';
+
+        if (tasks.length > 0) {
+          tasks.forEach(task => {
+            const row = document.createElement('tr');
+            
+            // Definir badge de status
+            let statusBadge = '';
+            switch(task.status) {
+              case 'completed':
+                statusBadge = '<span class="badge badge-completed">Concluída</span>';
+                break;
+              case 'in_progress':
+                statusBadge = '<span class="badge badge-progress">Em Andamento</span>';
+                break;
+              default:
+                statusBadge = '<span class="badge badge-pending">Pendente</span>';
+            }
+
+            // Encontrar nome da categoria
+            const category = allCategories.find(cat => cat.id === task.category_id);
+            const categoryName = category ? category.name : 'Sem categoria';
+
+            // Formatar data
+            const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString('pt-BR') : 'Sem prazo';
+
+            row.innerHTML = \`
+              <td>\${task.title || 'Sem título'}</td>
+              <td>\${task.description || 'Sem descrição'}</td>
+              <td>\${statusBadge}</td>
+              <td>\${categoryName}</td>
+              <td>\${dueDate}</td>
+              <td>
+                <button onclick="editTask('\${task.id}')" class="btn btn-warning" style="padding: 0.25rem 0.5rem; font-size: 0.875rem; margin-right: 0.25rem;">Editar</button>
+                <button onclick="deleteTask('\${task.id}')" class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">Excluir</button>
+              </td>
+            \`;
+            tableBody.appendChild(row);
+          });
+        } else {
+          tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #6c757d;">Nenhuma tarefa encontrada.</td></tr>';
+        }
+      }
+
+      // Função para filtrar tarefas
+      function filterTasks() {
+        const statusFilter = document.getElementById('filterStatus').value;
+        const categoryFilter = document.getElementById('filterCategory').value;
+
+        let filteredTasks = allTasks;
+
+        if (statusFilter) {
+          filteredTasks = filteredTasks.filter(task => task.status === statusFilter);
+        }
+
+        if (categoryFilter) {
+          filteredTasks = filteredTasks.filter(task => task.category_id === categoryFilter);
+        }
+
+        renderTasks(filteredTasks);
+      }
+
+      // Event listeners
+      document.getElementById('filterStatus').addEventListener('change', filterTasks);
+      document.getElementById('filterCategory').addEventListener('change', filterTasks);
+      document.getElementById('clearFilters').addEventListener('click', function() {
+        document.getElementById('filterStatus').value = '';
+        document.getElementById('filterCategory').value = '';
+        renderTasks(allTasks);
+      });
+
+      // Carregar dados ao inicializar a página
+      document.addEventListener('DOMContentLoaded', function() {
+        loadCategories();
+        loadTasks();
+      });
+
+      // Função para editar tarefa (será implementada)
+      function editTask(taskId) {
+        console.log('Editar tarefa:', taskId);
+        // Implementar edição
+      }
+
+      // Função para excluir tarefa (será implementada)
+      function deleteTask(taskId) {
+        if (confirm('Tem certeza que deseja excluir esta tarefa?')) {
+          console.log('Excluir tarefa:', taskId);
+          // Implementar exclusão
+        }
+      }
+    </script>
+  `
+}) %>

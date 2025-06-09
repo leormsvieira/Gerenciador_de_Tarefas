@@ -1,0 +1,145 @@
+<%- include('../layout/main', { 
+  title: 'Dashboard',
+  body: `
+    <div class="card">
+      <h2>📊 Dashboard - Visão Geral</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+        <div class="card" style="text-align: center;">
+          <h3 style="color: #667eea;">Total de Tarefas</h3>
+          <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0;" id="totalTasks">-</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <h3 style="color: #28a745;">Concluídas</h3>
+          <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0; color: #28a745;" id="completedTasks">-</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <h3 style="color: #ffc107;">Em Andamento</h3>
+          <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0; color: #ffc107;" id="progressTasks">-</p>
+        </div>
+        <div class="card" style="text-align: center;">
+          <h3 style="color: #dc3545;">Pendentes</h3>
+          <p style="font-size: 2rem; font-weight: bold; margin: 0.5rem 0; color: #dc3545;" id="pendingTasks">-</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📝 Tarefas Recentes</h2>
+      <div style="margin-bottom: 1rem;">
+        <a href="/tasks" class="btn btn-success">+ Nova Tarefa</a>
+        <a href="/tasks" class="btn">Ver Todas</a>
+      </div>
+      
+      <table id="recentTasksTable">
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Categoria</th>
+            <th>Status</th>
+            <th>Prazo</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="5" class="loading">Carregando tarefas...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      // Função para buscar estatísticas do dashboard
+      async function loadDashboardStats() {
+        try {
+          const response = await fetch('/api/tasks');
+          if (!response.ok) {
+            throw new Error('Erro ao buscar tarefas');
+          }
+          const tasks = await response.json();
+
+          // Calcular estatísticas
+          const total = tasks.length;
+          const completed = tasks.filter(task => task.status === 'completed').length;
+          const progress = tasks.filter(task => task.status === 'in_progress').length;
+          const pending = tasks.filter(task => task.status === 'pending').length;
+
+          // Atualizar elementos
+          document.getElementById('totalTasks').textContent = total;
+          document.getElementById('completedTasks').textContent = completed;
+          document.getElementById('progressTasks').textContent = progress;
+          document.getElementById('pendingTasks').textContent = pending;
+
+        } catch (error) {
+          console.error('Erro ao carregar estatísticas:', error);
+          document.getElementById('totalTasks').textContent = '0';
+          document.getElementById('completedTasks').textContent = '0';
+          document.getElementById('progressTasks').textContent = '0';
+          document.getElementById('pendingTasks').textContent = '0';
+        }
+      }
+
+      // Função para buscar tarefas recentes
+      async function loadRecentTasks() {
+        try {
+          const response = await fetch('/api/tasks');
+          if (!response.ok) {
+            throw new Error('Erro ao buscar tarefas');
+          }
+          const tasks = await response.json();
+
+          const tableBody = document.querySelector('#recentTasksTable tbody');
+          tableBody.innerHTML = '';
+
+          if (tasks.length > 0) {
+            // Mostrar apenas as 5 tarefas mais recentes
+            const recentTasks = tasks.slice(0, 5);
+            
+            recentTasks.forEach(task => {
+              const row = document.createElement('tr');
+              
+              // Definir badge de status
+              let statusBadge = '';
+              switch(task.status) {
+                case 'completed':
+                  statusBadge = '<span class="badge badge-completed">Concluída</span>';
+                  break;
+                case 'in_progress':
+                  statusBadge = '<span class="badge badge-progress">Em Andamento</span>';
+                  break;
+                default:
+                  statusBadge = '<span class="badge badge-pending">Pendente</span>';
+              }
+
+              // Formatar data
+              const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString('pt-BR') : 'Sem prazo';
+
+              row.innerHTML = \`
+                <td>\${task.title || 'Sem título'}</td>
+                <td>\${task.category || 'Sem categoria'}</td>
+                <td>\${statusBadge}</td>
+                <td>\${dueDate}</td>
+                <td>
+                  <a href="/tasks" class="btn btn-warning" style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">Editar</a>
+                </td>
+              \`;
+              tableBody.appendChild(row);
+            });
+          } else {
+            tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #6c757d;">Nenhuma tarefa encontrada. <a href="/tasks">Criar primeira tarefa</a></td></tr>';
+          }
+        } catch (error) {
+          console.error('Erro ao carregar tarefas:', error);
+          const tableBody = document.querySelector('#recentTasksTable tbody');
+          tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #dc3545;">Erro ao carregar tarefas.</td></tr>';
+        }
+      }
+
+      // Carregar dados ao inicializar a página
+      document.addEventListener('DOMContentLoaded', function() {
+        loadDashboardStats();
+        loadRecentTasks();
+      });
+    </script>
+  `
+}) %>
